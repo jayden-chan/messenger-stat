@@ -18,6 +18,10 @@
   },
   "homepage": "https://github.com/jayden-chan/messenger-stat#readme",
   "devDependencies": {
+    "@types/node": "^13.7.0",
     "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "moment": "^2.24.0"
   }
 }
