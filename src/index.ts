@@ -1,4 +1,4 @@
-import * as moment from "moment";
+import * as moment from "moment-timezone";
 import { heat } from "./charts/heatmap";
 import { readdirSync, readFileSync, writeFileSync } from "fs";
 
@@ -48,8 +48,13 @@ function main() {
     );
   });
 
+  generateHeatmaps(thread);
+  generateTODGraph(thread);
+  generateDOWGraph(thread);
+}
+
+function generateHeatmaps(thread: Thread): void {
   const years: { [key: string]: number[] } = {};
-  let max = 0;
 
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms);
@@ -61,11 +66,7 @@ function main() {
     }
 
     const days = years[year.toString()];
-
     days[doy] += 1;
-    if (days[doy] > max) {
-      max = days[doy];
-    }
   });
 
   Object.entries(years)
@@ -73,11 +74,7 @@ function main() {
       return {
         year,
         heatmap: heat({
-          title: `${
-            thread.participants.reduce((prev, curr) => {
-              return { name: `${prev.name} / ${curr.name}` };
-            }).name
-          } ${year}`,
+          title: year,
           outfile: year,
           data: days,
           colorbox: true
@@ -87,6 +84,74 @@ function main() {
     .forEach(({ year, heatmap }) => {
       writeFileSync(`out/${year}.gpi`, heatmap);
     });
+}
+
+function generateTODGraph(thread: Thread): void {
+  const times = [...Array(24).keys()].map(e => {
+    return { hour: e, count: 0 };
+  });
+
+  thread.messages.forEach(entry => {
+    times[
+      moment(entry.timestamp_ms)
+        .tz("America/Vancouver")
+        .hour()
+    ].count += 1;
+  });
+
+  let base = `set title "Time of Day Histogram"
+set term png size 1600, 900
+set output "times.png"
+set boxwidth 2
+set style fill solid
+set xlabel "Hour of Day"
+set ylabel "Count"
+unset key
+plot "-" using 2: xtic(1) with histogram
+`;
+
+  times.forEach(({ hour, count }) => {
+    base += `"${hour}" ${count}\n`;
+  });
+
+  writeFileSync("out/time.gpi", base);
+}
+
+function generateDOWGraph(thread: Thread): void {
+  const times = [
+    { day: "Sunday", count: 0 },
+    { day: "Monday", count: 0 },
+    { day: "Tuesday", count: 0 },
+    { day: "Wednesday", count: 0 },
+    { day: "Thursday", count: 0 },
+    { day: "Friday", count: 0 },
+    { day: "Saturday", count: 0 }
+  ];
+
+  thread.messages.forEach(entry => {
+    times[
+      moment(entry.timestamp_ms)
+        .tz("America/Vancouver")
+        .day()
+    ].count += 1;
+  });
+
+  let base = `set title "Day of Week Histogram"
+set term png size 1600, 900
+set output "dow.png"
+set boxwidth 2
+set style fill solid
+set xlabel "Hour of Day"
+set ylabel "Count"
+unset key
+plot "-" using 2: xtic(1) with histogram
+`;
+
+  times.forEach(({ day, count }) => {
+    base += `"${day}" ${count}\n`;
+  });
+
+  writeFileSync("out/dow.gpi", base);
 }
 
 main();
