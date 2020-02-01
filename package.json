@@ -1,0 +1,23 @@
+{
+  "name": "messenger-stat",
+  "version": "1.0.0",
+  "description": "Parses Facebook Messenger JSON data and makes pretty graphs",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jayden-chan/messenger-stat.git"
+  },
+  "author": "Jayden Chan <jaydencn7@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jayden-chan/messenger-stat/issues"
+  },
+  "homepage": "https://github.com/jayden-chan/messenger-stat#readme",
+  "devDependencies": {
+    "typescript": "^3.7.5"
+  }
+}
