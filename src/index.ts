@@ -56,6 +56,8 @@ function main() {
     process.exit(1);
   }
 
+  console.log("Processing data...");
+
   const thread: Thread = JSON.parse(
     readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString()
   );
@@ -69,12 +71,15 @@ function main() {
 
   const processedThread = processThread(thread);
 
+  console.log("Generating graphs...");
   generateHeatmaps(processedThread, tmpDir.name);
   generateTODGraph(processedThread, tmpDir.name);
   generateDOWGraph(processedThread, tmpDir.name);
 
+  console.log("Compiling report...");
   compileReport(tmpDir.name);
   tmpDir.removeCallback();
+  console.log("Finished.");
 }
 
 function processThread(thread: Thread): ProcessedThread {
@@ -135,13 +140,13 @@ function generateHeatmaps(thread: ProcessedThread, tmpDir: string): void {
 }
 
 function generateTODGraph(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Time of Day Histogram"
+  let base = `set title "Time of Day"
 set term png size 1600, 900
 set output "times.png"
 set boxwidth 2
 set style fill solid
 set xlabel "Hour of Day"
-set ylabel "Count"
+set ylabel "Count" rotate by 0
 unset key
 plot "-" using 2: xtic(1) with histogram
 `;
@@ -154,13 +159,13 @@ plot "-" using 2: xtic(1) with histogram
 }
 
 function generateDOWGraph(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Day of Week Histogram"
+  let base = `set title "Day of Week"
 set term png size 1600, 900
 set output "dow.png"
 set boxwidth 2
 set style fill solid
 set xlabel "Hour of Day"
-set ylabel "Count"
+set ylabel "Count" rotate by 0
 unset key
 plot "-" using 2: xtic(1) with histogram
 `;

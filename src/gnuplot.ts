@@ -6,8 +6,6 @@ export function plot(script: string, outDir: string): void {
       input: script,
       cwd: outDir
     });
-
-    console.log(stdout);
   } catch (e) {
     console.error(e);
     process.exit(1);
