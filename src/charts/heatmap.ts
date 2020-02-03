@@ -8,15 +8,6 @@ export type HeatmapInput = {
   colorbox: boolean;
 };
 
-/**
- * @param {String} title The title of the heatmap
- * @param {String} outFile The title of the output png
- * @param {String[]} palette The color palette
- * @param {Number[]} data The data
- * @param {Boolean} colorbox Whether or not to include the colorbox
- *
- * @return {String} The gnuplot script to generate the heatmap
- */
 export function heat(input: HeatmapInput) {
   const { title, outfile, palette, data, colorbox } = input;
   const xtics = [...Array(12).keys()].map(e => {

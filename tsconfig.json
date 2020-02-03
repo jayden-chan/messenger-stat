@@ -6,7 +6,6 @@
     "module": "commonjs",
     "target": "ES6",
     "inlineSourceMap": true,
-    "strict": true,
-    "jsx": "react"
+    "strict": true
   }
 }

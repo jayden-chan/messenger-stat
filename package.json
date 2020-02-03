@@ -19,10 +19,12 @@
   "homepage": "https://github.com/jayden-chan/messenger-stat#readme",
   "devDependencies": {
     "@types/node": "^13.7.0",
+    "@types/tmp": "^0.1.0",
     "typescript": "^3.7.5"
   },
   "dependencies": {
     "@types/moment-timezone": "^0.5.12",
-    "moment-timezone": "^0.5.27"
+    "moment-timezone": "^0.5.27",
+    "tmp": "^0.1.0"
   }
 }
