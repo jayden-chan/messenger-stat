@@ -45,7 +45,13 @@ function main() {
     process.exit(1);
   }
 
-  const tmpDir = tmp.dirSync();
+  /*
+    unsafeCleanup will remove the created directory even
+    if there are files in it. (we want this since all
+    the temp files will have been converted into a
+    non-temp pdf by the time the program exits)
+  */
+  const tmpDir = tmp.dirSync({ unsafeCleanup: true });
 
   let inputFolder = process.argv[2];
   if (inputFolder.endsWith("/")) {
