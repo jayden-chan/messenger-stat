@@ -34,6 +34,9 @@ type ProcessedThread = {
     day: string;
     count: number;
   }[];
+  participants: {
+    [key: string]: number;
+  };
 };
 
 function main() {
@@ -75,6 +78,7 @@ function main() {
   generateHeatmaps(processedThread, tmpDir.name);
   generateTODGraph(processedThread, tmpDir.name);
   generateDOWGraph(processedThread, tmpDir.name);
+  generateContributionGraph(processedThread, tmpDir.name);
 
   console.log("Compiling report...");
   compileReport(tmpDir.name);
@@ -98,6 +102,11 @@ function processThread(thread: Thread): ProcessedThread {
     { day: "Saturday", count: 0 }
   ];
 
+  const participants: { [key: string]: number } = {};
+  thread.participants.forEach(({ name }) => {
+    participants[name] = 0;
+  });
+
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
     const year = time.year();
@@ -110,6 +119,7 @@ function processThread(thread: Thread): ProcessedThread {
     const yearDays = years[year.toString()];
     yearDays[doy] += 1;
 
+    participants[entry.sender_name] += 1;
     times[time.hour()].count += 1;
     days[time.day()].count += 1;
   });
@@ -117,7 +127,8 @@ function processThread(thread: Thread): ProcessedThread {
   return {
     years,
     times,
-    days
+    days,
+    participants
   };
 }
 
@@ -146,7 +157,13 @@ set output "times.png"
 set boxwidth 2
 set style fill solid
 set xlabel "Hour of Day"
-set ylabel "Count" rotate by 0
+set ylabel "Count"
+set yrange [0:${Math.max.apply(
+    Math,
+    thread.times.map(o => {
+      return o.count;
+    })
+  ) * 1.05}]
 unset key
 plot "-" using 2: xtic(1) with histogram
 `;
@@ -165,13 +182,45 @@ set output "dow.png"
 set boxwidth 2
 set style fill solid
 set xlabel "Hour of Day"
-set ylabel "Count" rotate by 0
+set ylabel "Count"
 unset key
 plot "-" using 2: xtic(1) with histogram
 `;
 
   thread.days.forEach(({ day, count }) => {
     base += `"${day}" ${count}\n`;
+  });
+
+  plot(base, tmpDir);
+}
+
+function generateContributionGraph(
+  thread: ProcessedThread,
+  tmpDir: string
+): void {
+  const participants = Object.entries(thread.participants);
+  participants.sort((a, b) => {
+    if (a[1] > b[1]) {
+      return -1;
+    } else {
+      return 1;
+    }
+  });
+
+  let base = `set title "Participant Contributions"
+set term png size 1600, 900
+set output "participants.png"
+set boxwidth 2
+set style fill solid
+set xlabel "Participant"
+set ylabel "Message Count"
+set yrange [0:${participants[0][1] * 1.05}]
+unset key
+plot "-" using 2: xtic(1) with histogram
+`;
+
+  participants.forEach(([participant, count]) => {
+    base += `"${participant}" ${count}\n`;
   });
 
   plot(base, tmpDir);
