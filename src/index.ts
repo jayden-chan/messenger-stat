@@ -2,9 +2,8 @@ import * as moment from "moment-timezone";
 import * as tmp from "tmp";
 import { readdirSync, readFileSync } from "fs";
 
-import { heat } from "./charts/heatmap";
-import { plot } from "./gnuplot";
 import { compileReport } from "./pdf";
+import * as generate from "./generators";
 
 type Thread = {
   participants: {
@@ -24,7 +23,7 @@ type Message = {
   type: string;
 };
 
-type ProcessedThread = {
+export type ProcessedThread = {
   years: { [key: string]: number[] };
   times: {
     hour: number;
@@ -81,10 +80,10 @@ function main() {
   const processedThread = processThread(thread);
 
   console.log("Generating graphs...");
-  generateHeatmaps(processedThread, tmpDir.name);
-  generateTODGraph(processedThread, tmpDir.name);
-  generateDOWGraph(processedThread, tmpDir.name);
-  generateContributionGraph(processedThread, tmpDir.name);
+  generate.heatmaps(processedThread, tmpDir.name);
+  generate.timeOfDay(processedThread, tmpDir.name);
+  generate.daysOfWeek(processedThread, tmpDir.name);
+  generate.contributions(processedThread, tmpDir.name);
 
   console.log("Compiling report...");
   compileReport(tmpDir.name);
@@ -136,100 +135,6 @@ function processThread(thread: Thread): ProcessedThread {
     days,
     participants
   };
-}
-
-function generateHeatmaps(thread: ProcessedThread, tmpDir: string): void {
-  Object.entries(thread.years)
-    .map(([year, days]) => {
-      return {
-        year,
-        heatmap: heat({
-          title: year,
-          outfile: year,
-          data: days,
-          colorbox: true
-        })
-      };
-    })
-    .forEach(({ year, heatmap }) => {
-      plot(heatmap, tmpDir);
-    });
-}
-
-function generateTODGraph(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Time of Day"
-set term png size 1600, 900
-set output "times.png"
-set boxwidth 2
-set style fill solid
-set xlabel "Hour of Day"
-set ylabel "Count"
-set yrange [0:${Math.max.apply(
-    Math,
-    thread.times.map(o => {
-      return o.count;
-    })
-  ) * 1.05}]
-unset key
-plot "-" using 2: xtic(1) with histogram
-`;
-
-  thread.times.forEach(({ hour, count }) => {
-    base += `"${hour}" ${count}\n`;
-  });
-
-  plot(base, tmpDir);
-}
-
-function generateDOWGraph(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Day of Week"
-set term png size 1600, 900
-set output "dow.png"
-set boxwidth 2
-set style fill solid
-set xlabel "Hour of Day"
-set ylabel "Count"
-unset key
-plot "-" using 2: xtic(1) with histogram
-`;
-
-  thread.days.forEach(({ day, count }) => {
-    base += `"${day}" ${count}\n`;
-  });
-
-  plot(base, tmpDir);
-}
-
-function generateContributionGraph(
-  thread: ProcessedThread,
-  tmpDir: string
-): void {
-  const participants = Object.entries(thread.participants);
-  participants.sort((a, b) => {
-    if (a[1] > b[1]) {
-      return -1;
-    } else {
-      return 1;
-    }
-  });
-
-  let base = `set title "Participant Contributions"
-set term png size 1600, 900
-set output "participants.png"
-set boxwidth 2
-set style fill solid
-set xlabel "Participant"
-set ylabel "Message Count"
-set yrange [0:${participants[0][1] * 1.05}]
-unset key
-plot "-" using 2: xtic(1) with histogram
-`;
-
-  participants.forEach(([participant, count]) => {
-    base += `"${participant}" ${count}\n`;
-  });
-
-  plot(base, tmpDir);
 }
 
 main();
