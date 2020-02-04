@@ -53,6 +53,12 @@ set boxwidth 2
 set style fill solid
 set xlabel "Hour of Day"
 set ylabel "Count"
+set yrange [0:${Math.max.apply(
+    Math,
+    thread.days.map(o => {
+      return o.count;
+    })
+  ) * 1.05}]
 unset key
 plot "-" using 2: xtic(1) with histogram
 `;

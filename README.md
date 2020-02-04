@@ -6,7 +6,7 @@ This is a personal project and isn't designed to be distributed. However if you 
 try it out you can follow these steps:
 
 ### Dependencies
-messenger-stat relies on the following shell commands:
+messenger-stat depends on the following programs:
 * `gnuplot`
 * `convert` (ImageMagick)
 * `pdftex`
