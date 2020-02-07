@@ -2,7 +2,7 @@ import * as moment from "moment-timezone";
 import * as tmp from "tmp";
 import { readdirSync, readFileSync } from "fs";
 
-import { compileReport } from "./pdf";
+import { compile } from "./pdf";
 import * as generate from "./generators";
 
 type Thread = {
@@ -19,7 +19,7 @@ type Thread = {
 type Message = {
   sender_name: string;
   timestamp_ms: number;
-  content: string;
+  content?: string;
   type: string;
 };
 
@@ -36,6 +36,8 @@ export type ProcessedThread = {
   participants: {
     [key: string]: number;
   };
+  words: number;
+  chars: number;
 };
 
 function main() {
@@ -85,8 +87,38 @@ function main() {
   generate.daysOfWeek(processedThread, tmpDir.name);
   generate.contributions(processedThread, tmpDir.name);
 
+  const GGL = (fileName: string, title?: string) => {
+    const latexString = `\\begin{center}
+  \\makebox[\\textwidth]{\\includegraphics[width=\\paperwidth]{${fileName}}}
+\\end{center}`;
+    return title ? `\\subsection*{${title}}\n${latexString}` : latexString;
+  };
+
+  const t = tmpDir.name;
+
+  const graphString =
+    `\\subsection*{Yearly Heatmaps}\n` +
+    Object.keys(processedThread.years).reduce((prev, curr) => {
+      return prev + GGL(`${t}/${curr}.png`);
+    }, "") +
+    "\\eject \\pdfpagewidth=8.5in \\pdfpageheight=6in" +
+    GGL(`${t}/times.png`, "Total message count vs time of day") +
+    GGL(`${t}/dow.png`, "Total message count vs day of week") +
+    GGL(`${t}/participants.png`, "Total message count by participant");
+
   console.log("Compiling report...");
-  compileReport(tmpDir.name);
+  compile({
+    tmpDir: tmpDir.name,
+    templateValues: {
+      TITLE: "The Fremen",
+      VERSION: "1.0.0",
+      DATE: "Feb 6 2020",
+      MESSAGES: thread.messages.length.toString(),
+      WORDS: processedThread.words.toString(),
+      CHARS: processedThread.chars.toString(),
+      GRAPHS: graphString
+    }
+  });
   tmpDir.removeCallback();
   console.log("Finished.");
 }
@@ -112,6 +144,9 @@ function processThread(thread: Thread): ProcessedThread {
     participants[name] = 0;
   });
 
+  let words = 0;
+  let chars = 0;
+
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
     const year = time.year();
@@ -127,13 +162,17 @@ function processThread(thread: Thread): ProcessedThread {
     participants[entry.sender_name] += 1;
     times[time.hour()].count += 1;
     days[time.day()].count += 1;
+    words += entry.content ? entry.content.split(" ").length : 0;
+    chars += entry.content ? entry.content.length : 0;
   });
 
   return {
     years,
     times,
     days,
-    participants
+    participants,
+    words,
+    chars
   };
 }
 
