@@ -4,6 +4,7 @@ import { readdirSync, readFileSync } from "fs";
 
 import { compile } from "./pdf";
 import * as generate from "./generators";
+import { getGraphsString } from "./latex";
 
 type Thread = {
   participants: {
@@ -87,25 +88,6 @@ function main() {
   generate.daysOfWeek(processedThread, tmpDir.name);
   generate.contributions(processedThread, tmpDir.name);
 
-  const GGL = (fileName: string, title?: string) => {
-    const latexString = `\\begin{center}
-  \\makebox[\\textwidth]{\\includegraphics[width=\\paperwidth]{${fileName}}}
-\\end{center}`;
-    return title ? `\\subsection*{${title}}\n${latexString}` : latexString;
-  };
-
-  const t = tmpDir.name;
-
-  const graphString =
-    `\\subsection*{Yearly Heatmaps}\n` +
-    Object.keys(processedThread.years).reduce((prev, curr) => {
-      return prev + GGL(`${t}/${curr}.png`);
-    }, "") +
-    "\\eject \\pdfpagewidth=8.5in \\pdfpageheight=6in" +
-    GGL(`${t}/times.png`, "Total message count vs time of day") +
-    GGL(`${t}/dow.png`, "Total message count vs day of week") +
-    GGL(`${t}/participants.png`, "Total message count by participant");
-
   console.log("Compiling report...");
   compile({
     tmpDir: tmpDir.name,
@@ -116,7 +98,7 @@ function main() {
       MESSAGES: thread.messages.length.toString(),
       WORDS: processedThread.words.toString(),
       CHARS: processedThread.chars.toString(),
-      GRAPHS: graphString
+      GRAPHS: getGraphsString(tmpDir.name, processedThread)
     }
   });
   tmpDir.removeCallback();

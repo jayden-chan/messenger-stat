@@ -6,10 +6,11 @@ export type HeatmapInput = {
   palette?: string[];
   data: number[];
   colorbox: boolean;
+  cbrange?: [number, number];
 };
 
 export function heat(input: HeatmapInput) {
-  const { title, outfile, palette, data, colorbox } = input;
+  const { title, outfile, palette, data, colorbox, cbrange } = input;
   const xtics = [...Array(12).keys()].map(e => {
     const week = moment(`${e + 1}-01`, "M-DD").week() - 1;
     const month = moment(`${e + 1}-01`, "M-DD").format("MMMM");
@@ -37,6 +38,7 @@ set title "${title
 set yrange [-0.5:6.5]
 set xrange [-0.5:52.5]
 set zrange [0:${Math.max.apply(Math, data)}]
+${cbrange ? `set cbrange [${cbrange[0]}:${cbrange[1]}]` : ""}
 set xtics (${xtics.join(", ")})
 set ytics (${ytics.join(", ")})
 ${p_string}
