@@ -1,3 +1,5 @@
+const Iconv = require("iconv").Iconv;
+
 export const wordBlacklist = [
   "is",
   "if",
@@ -46,3 +48,13 @@ export const wordBlacklist = [
   "there",
   "their"
 ];
+
+export function contentConvert(key: any, value: any): any {
+  if (typeof value === "string") {
+    const iconv = new Iconv("UTF-8", "ISO-8859-1");
+    const buffer = iconv.convert(value);
+    return buffer.toString();
+  } else {
+    return value;
+  }
+}

@@ -5,7 +5,7 @@ import { readdirSync, readFileSync } from "fs";
 import { compile } from "./pdf";
 import * as generate from "./generators";
 import { getGraphsString } from "./latex";
-import { wordBlacklist } from "./util";
+import { wordBlacklist, contentConvert } from "./util";
 
 type Thread = {
   participants: {
@@ -86,10 +86,11 @@ function main() {
     process.exit(1);
   }
 
-  console.log("Processing data...");
+  console.log("Loading data...");
 
   const thread: Thread = JSON.parse(
-    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString()
+    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString(),
+    contentConvert
   );
 
   files.sort((a, b) => {
@@ -105,8 +106,10 @@ function main() {
 
   files.slice(1).forEach(file => {
     thread.messages = thread.messages.concat(
-      JSON.parse(readFileSync(`${inputFolder}/${file}`, "utf-8").toString())
-        .messages
+      JSON.parse(
+        readFileSync(`${inputFolder}/${file}`, "utf-8").toString(),
+        contentConvert
+      ).messages
     );
   });
 
@@ -115,6 +118,7 @@ function main() {
     process.exit(1);
   }
 
+  console.log("Processing data...");
   const processedThread = processThread(thread);
 
   console.log("Generating graphs...");
@@ -262,9 +266,7 @@ function processThread(thread: Thread): ProcessedThread {
     globalMax,
     longest,
     avgResp,
-    wordMap: wordsSorted
-      .filter(word => !wordBlacklist.includes(word[0]))
-      .slice(0, 10)
+    wordMap: wordsSorted.filter(word => word[0].length > 4).slice(0, 10)
   };
 }
 

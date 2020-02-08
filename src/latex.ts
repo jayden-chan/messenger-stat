@@ -17,7 +17,10 @@ export function getGraphsString(
       return prev + getGraphLatex(`${tmpDir}/${curr}.png`);
     }, "") +
     "\\eject \\pdfpagewidth=8.5in \\pdfpageheight=6in" +
-    getGraphLatex(`${tmpDir}/words.png`, "Most commonly occurring words") +
+    getGraphLatex(
+      `${tmpDir}/words.png`,
+      "Most frequently used words (5 or more characters)"
+    ) +
     getGraphLatex(`${tmpDir}/times.png`, "Total messages by time of day") +
     getGraphLatex(`${tmpDir}/dow.png`, "Total messages by day of week") +
     getGraphLatex(
@@ -31,4 +34,3 @@ export function getGraphsString(
     "\\clearpage\n\\eject \\pdfpagewidth=8.5in \\pdfpageheight=11in"
   );
 }
-
