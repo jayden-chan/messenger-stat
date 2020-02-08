@@ -92,6 +92,17 @@ function main() {
     readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString()
   );
 
+  files.sort((a, b) => {
+    const numA = /message_(\d+).json/.exec(a);
+    const numB = /message_(\d+).json/.exec(b);
+    if (!numA || !numB) {
+      console.log("Failed to parse message JSON files");
+      process.exit(1);
+    } else {
+      return Number(numA[1]) < Number(numB[1]) ? -1 : 1;
+    }
+  });
+
   files.slice(1).forEach(file => {
     thread.messages = thread.messages.concat(
       JSON.parse(readFileSync(`${inputFolder}/${file}`, "utf-8").toString())

@@ -52,7 +52,7 @@ set term png size 1600, 900
 set output "dow.png"
 set boxwidth 2
 set style fill solid
-set xlabel "Hour of Day"
+set xlabel "Day of Week"
 set ylabel "Count"
 set yrange [0:${Math.max.apply(
     Math,
