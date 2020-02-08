@@ -39,6 +39,8 @@ export type ProcessedThread = {
   };
   words: number;
   chars: number;
+  globalMax: [string, number];
+  longest: [string, number];
 };
 
 function main() {
@@ -92,13 +94,15 @@ function main() {
   compile({
     tmpDir: tmpDir.name,
     templateValues: {
-      TITLE: "The Fremen",
+      TITLE: thread.title,
       VERSION: "1.0.0",
-      DATE: "Feb 6 2020",
+      DATE: moment().format("MMMM Do, YYYY"),
       MESSAGES: thread.messages.length.toString(),
       WORDS: processedThread.words.toString(),
       CHARS: processedThread.chars.toString(),
-      GRAPHS: getGraphsString(tmpDir.name, processedThread)
+      GRAPHS: getGraphsString(tmpDir.name, processedThread),
+      MAD: `${processedThread.globalMax[0]} (${processedThread.globalMax[1]} messages)`,
+      LONGEST: `${processedThread.longest[1]} chars (sent by ${processedThread.longest[0]})`
     }
   });
   tmpDir.removeCallback();
@@ -128,6 +132,8 @@ function processThread(thread: Thread): ProcessedThread {
 
   let words = 0;
   let chars = 0;
+  let globalMax: [string, number] = ["", 0];
+  let longest: [string, number] = ["", 0];
 
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
@@ -139,7 +145,15 @@ function processThread(thread: Thread): ProcessedThread {
     }
 
     const yearDays = years[year.toString()];
-    yearDays[doy] += 1;
+    const currDay = (yearDays[doy] += 1);
+
+    if (currDay > globalMax[1]) {
+      globalMax = [time.format("MMM Do, YYYY"), currDay];
+    }
+
+    if (entry.content && entry.content.length > longest[1]) {
+      longest = [entry.sender_name, entry.content.length];
+    }
 
     participants[entry.sender_name] += 1;
     times[time.hour()].count += 1;
@@ -154,7 +168,9 @@ function processThread(thread: Thread): ProcessedThread {
     days,
     participants,
     words,
-    chars
+    chars,
+    globalMax,
+    longest
   };
 }
 

@@ -11,7 +11,8 @@ export function heatmaps(thread: ProcessedThread, tmpDir: string): void {
           title: year,
           outfile: year,
           data: days,
-          colorbox: true
+          colorbox: true,
+          cbrange: [0, thread.globalMax[1]]
         })
       };
     })
@@ -21,7 +22,7 @@ export function heatmaps(thread: ProcessedThread, tmpDir: string): void {
 }
 
 export function timeOfDay(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Time of Day"
+  let base = `set title ""
 set term png size 1600, 900
 set output "times.png"
 set boxwidth 2
@@ -46,7 +47,7 @@ plot "-" using 2: xtic(1) with histogram
 }
 
 export function daysOfWeek(thread: ProcessedThread, tmpDir: string): void {
-  let base = `set title "Day of Week"
+  let base = `set title ""
 set term png size 1600, 900
 set output "dow.png"
 set boxwidth 2
@@ -80,7 +81,7 @@ export function contributions(thread: ProcessedThread, tmpDir: string): void {
     }
   });
 
-  let base = `set title "Participant Contributions"
+  let base = `set title ""
 set term png size 1600, 900
 set output "participants.png"
 set boxwidth 2
