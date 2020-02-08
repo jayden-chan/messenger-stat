@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from "fs";
 import { compile } from "./pdf";
 import * as generate from "./generators";
 import { getGraphsString } from "./latex";
+import { wordBlacklist } from "./util";
 
 type Thread = {
   participants: {
@@ -42,6 +43,7 @@ export type ProcessedThread = {
   globalMax: [string, number];
   longest: [string, string, number];
   avgResp: number;
+  wordMap: [string, number][];
 };
 
 function main() {
@@ -95,6 +97,7 @@ function main() {
   generate.timeOfDay(processedThread, tmpDir.name);
   generate.daysOfWeek(processedThread, tmpDir.name);
   generate.contributions(processedThread, tmpDir.name);
+  generate.topWords(processedThread, tmpDir.name);
 
   console.log("Compiling report...");
   compile({
@@ -153,11 +156,13 @@ function processThread(thread: Thread): ProcessedThread {
 
   let avgResp = 0;
   const numMessages = thread.messages.length;
+  const wordMap: { [key: string]: number } = {};
 
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
     const year = time.year();
     const doy = time.dayOfYear() + 1;
+    const messageWords = entry.content ? entry.content.split(" ") : [];
 
     if (entry.sender_name !== previous[1]) {
       avgResp +=
@@ -175,21 +180,30 @@ function processThread(thread: Thread): ProcessedThread {
       globalMax = [time.format("MMM Do, YYYY"), currDay];
     }
 
-    if (entry.content && entry.content.split(" ").length > longest[2]) {
-      longest = [
-        entry.sender_name,
-        entry.content,
-        entry.content.split(" ").length
-      ];
+    if (entry.content && messageWords.length > longest[2]) {
+      longest = [entry.sender_name, entry.content, messageWords.length];
     }
 
     participants[entry.sender_name] += 1;
     times[time.hour()].count += 1;
     days[time.day()].count += 1;
-    words += entry.content ? entry.content.split(" ").length : 0;
+    words += messageWords.length;
     chars += entry.content ? entry.content.length : 0;
 
     previous = [time, entry.sender_name];
+    messageWords.forEach(word => {
+      if (word.length === 0) return;
+      const w = word.toLowerCase().replace(/[-,.\/\\\?"'{}_]/, "");
+      if (!wordMap[w]) {
+        wordMap[w] = 1;
+      } else {
+        wordMap[w] += 1;
+      }
+    });
+  });
+
+  const wordsSorted = Object.entries(wordMap).sort(function(a, b) {
+    return wordMap[b[0]] - wordMap[a[0]];
   });
 
   return {
@@ -201,7 +215,10 @@ function processThread(thread: Thread): ProcessedThread {
     chars,
     globalMax,
     longest,
-    avgResp
+    avgResp,
+    wordMap: wordsSorted
+      .filter(word => !wordBlacklist.includes(word[0]))
+      .slice(0, 10)
   };
 }
 

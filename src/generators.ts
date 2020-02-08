@@ -99,3 +99,23 @@ plot "-" using 2: xtic(1) with histogram
 
   plot(base, tmpDir);
 }
+
+export function topWords(thread: ProcessedThread, tmpDir: string): void {
+  let base = `set title ""
+set term png size 1600, 900
+set output "words.png"
+set boxwidth 2
+set style fill solid
+set xlabel "Word"
+set ylabel "Occurrences"
+set yrange [0:${thread.wordMap[0][1] * 1.05}]
+unset key
+plot "-" using 2: xtic(1) with histogram
+`;
+
+  thread.wordMap.forEach(([word, count]) => {
+    base += `"${word}" ${count}\n`;
+  });
+
+  plot(base, tmpDir);
+}
