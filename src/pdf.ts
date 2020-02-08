@@ -19,7 +19,7 @@ export function compile(template: ReportTemplate): void {
   writeFileSync(`${t}/latex.tex`, latexTemplate);
 
   try {
-    child.execSync(`pdflatex -output-directory=${t} ${t}/latex.tex`);
+    child.execSync(`xelatex -output-directory=${t} ${t}/latex.tex`);
   } catch (e) {
     console.error(e);
     console.error(e.stdout.toString());

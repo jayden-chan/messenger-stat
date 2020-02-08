@@ -8,7 +8,7 @@ try it out you can follow these steps:
 ### Dependencies
 messenger-stat depends on the following programs:
 * `gnuplot`
-* `pdflatex`
+* `xelatex`
 
 After you have installed the above dependencies you can clone and build the project:
 

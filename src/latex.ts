@@ -22,6 +22,7 @@ export function getGraphsString(
     getGraphLatex(
       `${tmpDir}/participants.png`,
       "Total message count by participant"
-    )
+    ) +
+    "\\clearpage\n\\eject \\pdfpagewidth=8.5in \\pdfpageheight=11in"
   );
 }

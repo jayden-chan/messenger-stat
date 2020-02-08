@@ -40,7 +40,7 @@ export type ProcessedThread = {
   words: number;
   chars: number;
   globalMax: [string, number];
-  longest: [string, number];
+  longest: [string, string, number];
 };
 
 function main() {
@@ -102,7 +102,8 @@ function main() {
       CHARS: processedThread.chars.toString(),
       GRAPHS: getGraphsString(tmpDir.name, processedThread),
       MAD: `${processedThread.globalMax[0]} (${processedThread.globalMax[1]} messages)`,
-      LONGEST: `${processedThread.longest[1]} chars (sent by ${processedThread.longest[0]})`
+      LONGEST: `${processedThread.longest[2]} words (sent by ${processedThread.longest[0]})`,
+      LMC: processedThread.longest[1]
     }
   });
   tmpDir.removeCallback();
@@ -133,7 +134,7 @@ function processThread(thread: Thread): ProcessedThread {
   let words = 0;
   let chars = 0;
   let globalMax: [string, number] = ["", 0];
-  let longest: [string, number] = ["", 0];
+  let longest: [string, string, number] = ["", "", 0];
 
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
@@ -151,8 +152,12 @@ function processThread(thread: Thread): ProcessedThread {
       globalMax = [time.format("MMM Do, YYYY"), currDay];
     }
 
-    if (entry.content && entry.content.length > longest[1]) {
-      longest = [entry.sender_name, entry.content.length];
+    if (entry.content && entry.content.split(" ").length > longest[2]) {
+      longest = [
+        entry.sender_name,
+        entry.content,
+        entry.content.split(" ").length
+      ];
     }
 
     participants[entry.sender_name] += 1;
