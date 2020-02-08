@@ -27,11 +27,9 @@ node dist/index.js ~/<path-to-fb-dump>/messages/inbox/<folder-of-thread-to-proce
 This will generate a file called `report.pdf` that contains the data visualization.
 
 ## Example Output
-![](https://i.imgur.com/rOAh87u.png)
-![](https://i.imgur.com/Kgq1et4.png)
-![](https://i.imgur.com/Dccme2L.png)
-![](https://i.imgur.com/wGvKY4K.png)
-![](https://i.imgur.com/QBrYa5v.png)
-![](https://i.imgur.com/V2rUOpU.png)
-![](https://i.imgur.com/iqtwlXA.png)
-![](https://i.imgur.com/d7B2S7p.png)
+![](https://i.imgur.com/KZAljNS.png)
+![](https://i.imgur.com/EYTXkIu.png)
+![](https://i.imgur.com/7tlW1ro.png)
+![](https://i.imgur.com/BGKS8wS.png)
+![](https://i.imgur.com/F2JGWAd.png)
+![](https://i.imgur.com/Ea7YTc7.png)
