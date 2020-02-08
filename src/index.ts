@@ -174,13 +174,9 @@ function processThread(thread: Thread): ProcessedThread {
     participantsMedia[name] = 0;
   });
 
-  const firstMessage = thread.messages[0];
   let words = 0;
   let chars = 0;
-  let globalMax: [string, number] = [
-    moment(firstMessage.timestamp_ms).format("MMM, Do, YYYY"),
-    firstMessage.content ? firstMessage.content.length : 0
-  ];
+  let globalMax: [string, number] = ["", 0];
   let longest: [string, string, number] = ["", "", 0];
   let longestChars = 0;
   let previous: [moment.Moment, string] = [
