@@ -79,20 +79,14 @@ function main() {
     inputFolder = inputFolder.slice(0, -1);
   }
 
-  const files = readdirSync(inputFolder, null);
+  const files = readdirSync(inputFolder).filter(f => f.endsWith(".json"));
 
   if (files.length <= 0) {
-    console.log("No files found in directory");
+    console.log("No JSON files found in directory");
     process.exit(1);
   }
 
   console.log("Loading data...");
-
-  const thread: Thread = JSON.parse(
-    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString(),
-    contentConvert
-  );
-
   files.sort((a, b) => {
     const numA = /message_(\d+).json/.exec(a);
     const numB = /message_(\d+).json/.exec(b);
@@ -103,6 +97,11 @@ function main() {
       return Number(numA[1]) < Number(numB[1]) ? -1 : 1;
     }
   });
+
+  const thread: Thread = JSON.parse(
+    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString(),
+    contentConvert
+  );
 
   files.slice(1).forEach(file => {
     thread.messages = thread.messages.concat(
