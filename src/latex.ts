@@ -12,16 +12,16 @@ export function getGraphsString(
   thread: ProcessedThread
 ): string {
   return (
-    `\\subsection*{Yearly Heatmaps}\n` +
+    `\\subsection*{Annual Heatmaps}\n` +
     Object.keys(thread.years).reduce((prev, curr) => {
       return prev + getGraphLatex(`${tmpDir}/${curr}.png`);
     }, "") +
     "\\eject \\pdfpagewidth=8.5in \\pdfpageheight=6in" +
-    getGraphLatex(`${tmpDir}/times.png`, "Total message count vs time of day") +
-    getGraphLatex(`${tmpDir}/dow.png`, "Total message count vs day of week") +
+    getGraphLatex(`${tmpDir}/times.png`, "Total messages by time of day") +
+    getGraphLatex(`${tmpDir}/dow.png`, "Total messages by day of week") +
     getGraphLatex(
       `${tmpDir}/participants.png`,
-      "Total message count by participant"
+      "Total messages by participant"
     ) +
     "\\clearpage\n\\eject \\pdfpagewidth=8.5in \\pdfpageheight=11in"
   );

@@ -41,6 +41,7 @@ export type ProcessedThread = {
   chars: number;
   globalMax: [string, number];
   longest: [string, string, number];
+  avgResp: number;
 };
 
 function main() {
@@ -82,6 +83,11 @@ function main() {
     );
   });
 
+  if (thread.messages.length === 0) {
+    console.log("No messages found!");
+    process.exit(1);
+  }
+
   const processedThread = processThread(thread);
 
   console.log("Generating graphs...");
@@ -103,7 +109,8 @@ function main() {
       GRAPHS: getGraphsString(tmpDir.name, processedThread),
       MAD: `${processedThread.globalMax[0]} (${processedThread.globalMax[1]} messages)`,
       LONGEST: `${processedThread.longest[2]} words (sent by ${processedThread.longest[0]})`,
-      LMC: processedThread.longest[1]
+      LMC: processedThread.longest[1],
+      RESP: processedThread.avgResp.toFixed(2)
     }
   });
   tmpDir.removeCallback();
@@ -131,15 +138,31 @@ function processThread(thread: Thread): ProcessedThread {
     participants[name] = 0;
   });
 
+  const firstMessage = thread.messages[0];
   let words = 0;
   let chars = 0;
-  let globalMax: [string, number] = ["", 0];
+  let globalMax: [string, number] = [
+    moment(firstMessage.timestamp_ms).format("MMM, Do, YYYY"),
+    firstMessage.content ? firstMessage.content.length : 0
+  ];
   let longest: [string, string, number] = ["", "", 0];
+  let previous: [moment.Moment, string] = [
+    moment(thread.messages[0].timestamp_ms),
+    thread.messages[0].sender_name
+  ];
+
+  let avgResp = 0;
+  const numMessages = thread.messages.length;
 
   thread.messages.forEach(entry => {
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
     const year = time.year();
     const doy = time.dayOfYear() + 1;
+
+    if (entry.sender_name !== previous[1]) {
+      avgResp +=
+        moment.duration(previous[0].diff(time)).as("minutes") / numMessages;
+    }
 
     if (!years[year.toString()]) {
       years[year.toString()] = new Array(371).fill(0);
@@ -165,6 +188,8 @@ function processThread(thread: Thread): ProcessedThread {
     days[time.day()].count += 1;
     words += entry.content ? entry.content.split(" ").length : 0;
     chars += entry.content ? entry.content.length : 0;
+
+    previous = [time, entry.sender_name];
   });
 
   return {
@@ -175,7 +200,8 @@ function processThread(thread: Thread): ProcessedThread {
     words,
     chars,
     globalMax,
-    longest
+    longest,
+    avgResp
   };
 }
 
