@@ -22,6 +22,17 @@ type Message = {
   sender_name: string;
   timestamp_ms: number;
   content?: string;
+  photos?: {
+    uri: string;
+    creation_timestamp: number;
+  }[];
+  videos?: {
+    uri: string;
+    creation_timestamp: number;
+    thumbnail: {
+      uri: string;
+    };
+  }[];
   type: string;
 };
 
@@ -36,6 +47,9 @@ export type ProcessedThread = {
     count: number;
   }[];
   participants: {
+    [key: string]: number;
+  };
+  participantsMedia: {
     [key: string]: number;
   };
   words: number;
@@ -97,6 +111,7 @@ function main() {
   generate.timeOfDay(processedThread, tmpDir.name);
   generate.daysOfWeek(processedThread, tmpDir.name);
   generate.contributions(processedThread, tmpDir.name);
+  generate.contributionsMedia(processedThread, tmpDir.name);
   generate.topWords(processedThread, tmpDir.name);
 
   console.log("Compiling report...");
@@ -111,7 +126,9 @@ function main() {
       CHARS: processedThread.chars.toString(),
       GRAPHS: getGraphsString(tmpDir.name, processedThread),
       MAD: `${processedThread.globalMax[0]} (${processedThread.globalMax[1]} messages)`,
-      LONGEST: `${processedThread.longest[2]} words (sent by ${processedThread.longest[0]})`,
+      LONGEST: `${processedThread.longest[2]} word${
+        processedThread.longest[2] > 1 ? "s" : ""
+      } (sent by ${processedThread.longest[0]})`,
       LMC: processedThread.longest[1],
       RESP: processedThread.avgResp.toFixed(2)
     }
@@ -137,8 +154,10 @@ function processThread(thread: Thread): ProcessedThread {
   ];
 
   const participants: { [key: string]: number } = {};
+  const participantsMedia: { [key: string]: number } = {};
   thread.participants.forEach(({ name }) => {
     participants[name] = 0;
+    participantsMedia[name] = 0;
   });
 
   const firstMessage = thread.messages[0];
@@ -149,6 +168,7 @@ function processThread(thread: Thread): ProcessedThread {
     firstMessage.content ? firstMessage.content.length : 0
   ];
   let longest: [string, string, number] = ["", "", 0];
+  let longestChars = 0;
   let previous: [moment.Moment, string] = [
     moment(thread.messages[0].timestamp_ms),
     thread.messages[0].sender_name
@@ -163,10 +183,15 @@ function processThread(thread: Thread): ProcessedThread {
     const year = time.year();
     const doy = time.dayOfYear() + 1;
     const messageWords = entry.content ? entry.content.split(" ") : [];
+    const sender_name = entry.sender_name;
 
-    if (entry.sender_name !== previous[1]) {
-      avgResp +=
-        moment.duration(previous[0].diff(time)).as("minutes") / numMessages;
+    if (sender_name !== previous[1]) {
+      const diffMinutes = moment.duration(previous[0].diff(time)).as("minutes");
+
+      // Only include gaps of less than 6 hours in "response time" metric
+      if (diffMinutes < 6 * 60) {
+        avgResp += diffMinutes / numMessages;
+      }
     }
 
     if (!years[year.toString()]) {
@@ -180,20 +205,29 @@ function processThread(thread: Thread): ProcessedThread {
       globalMax = [time.format("MMM Do, YYYY"), currDay];
     }
 
-    if (entry.content && messageWords.length > longest[2]) {
-      longest = [entry.sender_name, entry.content, messageWords.length];
+    if (entry.content && entry.content.length > longestChars) {
+      longest = [sender_name, entry.content, messageWords.length];
+      longestChars = entry.content.length;
     }
 
-    participants[entry.sender_name] += 1;
+    participants[sender_name] += 1;
     times[time.hour()].count += 1;
     days[time.day()].count += 1;
     words += messageWords.length;
     chars += entry.content ? entry.content.length : 0;
 
-    previous = [time, entry.sender_name];
+    if (entry.photos) {
+      participantsMedia[sender_name] += entry.photos.length;
+    }
+
+    if (entry.videos) {
+      participantsMedia[sender_name] += entry.videos.length;
+    }
+
+    previous = [time, sender_name];
     messageWords.forEach(word => {
       if (word.length === 0) return;
-      const w = word.toLowerCase().replace(/[-,.\/\\\?"'{}_]/, "");
+      const w = word.toLowerCase().replace(/[-,./\\?"'{}_]/, "");
       if (!wordMap[w]) {
         wordMap[w] = 1;
       } else {
@@ -211,6 +245,7 @@ function processThread(thread: Thread): ProcessedThread {
     times,
     days,
     participants,
+    participantsMedia,
     words,
     chars,
     globalMax,

@@ -24,6 +24,10 @@ export function getGraphsString(
       `${tmpDir}/participants.png`,
       "Total messages by participant"
     ) +
+    getGraphLatex(
+      `${tmpDir}/participantsMedia.png`,
+      "Total multimedia messages by participant"
+    ) +
     "\\clearpage\n\\eject \\pdfpagewidth=8.5in \\pdfpageheight=11in"
   );
 }

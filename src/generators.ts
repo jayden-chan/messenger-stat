@@ -100,6 +100,38 @@ plot "-" using 2: xtic(1) with histogram
   plot(base, tmpDir);
 }
 
+export function contributionsMedia(
+  thread: ProcessedThread,
+  tmpDir: string
+): void {
+  const participants = Object.entries(thread.participantsMedia);
+  participants.sort((a, b) => {
+    if (a[1] > b[1]) {
+      return -1;
+    } else {
+      return 1;
+    }
+  });
+
+  let base = `set title ""
+set term png size 1600, 900
+set output "participantsMedia.png"
+set boxwidth 2
+set style fill solid
+set xlabel "Participant"
+set ylabel "Media Count"
+set yrange [0:${participants[0][1] * 1.05}]
+unset key
+plot "-" using 2: xtic(1) with histogram
+`;
+
+  participants.forEach(([participant, count]) => {
+    base += `"${participant}" ${count}\n`;
+  });
+
+  plot(base, tmpDir);
+}
+
 export function topWords(thread: ProcessedThread, tmpDir: string): void {
   let base = `set title ""
 set term png size 1600, 900
