@@ -3,62 +3,10 @@ import * as tmp from "tmp";
 import { readdirSync, readFileSync } from "fs";
 
 import { compile } from "./pdf";
-import * as generate from "./generators";
+import * as generate from "./gnuplot";
 import { getGraphsString } from "./latex";
-import { wordBlacklist, contentConvert } from "./util";
-
-type Thread = {
-  participants: {
-    name: string;
-  }[];
-  messages: Message[];
-  title: string;
-  is_still_participant: boolean;
-  thread_type: string;
-  thread_path: string;
-};
-
-type Message = {
-  sender_name: string;
-  timestamp_ms: number;
-  content?: string;
-  photos?: {
-    uri: string;
-    creation_timestamp: number;
-  }[];
-  videos?: {
-    uri: string;
-    creation_timestamp: number;
-    thumbnail: {
-      uri: string;
-    };
-  }[];
-  type: string;
-};
-
-export type ProcessedThread = {
-  years: { [key: string]: number[] };
-  times: {
-    hour: number;
-    count: number;
-  }[];
-  days: {
-    day: string;
-    count: number;
-  }[];
-  participants: {
-    [key: string]: number;
-  };
-  participantsMedia: {
-    [key: string]: number;
-  };
-  words: number;
-  chars: number;
-  globalMax: [string, number];
-  longest: [string, string, number];
-  avgResp: number;
-  wordMap: [string, number][];
-};
+import { transcodeStrings } from "./util";
+import { Thread, ProcessedThread } from "./types";
 
 function main() {
   if (!process.argv[2]) {
@@ -67,11 +15,11 @@ function main() {
   }
 
   /*
-    unsafeCleanup will remove the created directory even
-    if there are files in it. (we want this since all
-    the temp files will have been converted into a
-    non-temp pdf by the time the program exits)
-  */
+   * unsafeCleanup will remove the created directory even
+   * if there are files in it. (we want this since all
+   * the temp files will have been converted into a
+   * non-temp pdf by the time the program exits)
+   */
   const tmpDir = tmp.dirSync({ unsafeCleanup: true });
 
   let inputFolder = process.argv[2];
@@ -86,7 +34,14 @@ function main() {
     process.exit(1);
   }
 
-  console.log("Loading data...");
+  /*
+   * Re-order the message files. If we skip this step
+   * the messages will order like this:
+   *     message_1.json
+   *     message_10.json
+   *     message_2.json
+   *     ...
+   */
   files.sort((a, b) => {
     const numA = /message_(\d+).json/.exec(a);
     const numB = /message_(\d+).json/.exec(b);
@@ -98,20 +53,33 @@ function main() {
     }
   });
 
-  const thread: Thread = JSON.parse(
-    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString(),
-    contentConvert
+  console.log(
+    `Loading data...${files.length > 3 ? " (This may take a moment)" : ""}`
   );
 
+  /*
+   * Every string in the input JSON needs to be transcoded because
+   * FB data is received in latin1 instead of UTF-8.
+   */
+  const thread: Thread = JSON.parse(
+    readFileSync(`${inputFolder}/${files[0]}`, "utf-8").toString(),
+    transcodeStrings
+  );
+
+  // Read the rest of the message files.
+  // TODO: Analyze the message files in chunks as provided by FB instead of together
   files.slice(1).forEach(file => {
     thread.messages = thread.messages.concat(
       JSON.parse(
         readFileSync(`${inputFolder}/${file}`, "utf-8").toString(),
-        contentConvert
+        transcodeStrings
       ).messages
     );
   });
 
+  /*
+   * This step lets us skip all future array[0] bounds checks
+   */
   if (thread.messages.length === 0) {
     console.log("No messages found!");
     process.exit(1);
@@ -133,7 +101,7 @@ function main() {
     tmpDir: tmpDir.name,
     templateValues: {
       TITLE: thread.title,
-      VERSION: "1.0.0",
+      VERSION: "1.0.1",
       DATE: moment().format("MMMM Do, YYYY"),
       MESSAGES: thread.messages.length.toString(),
       WORDS: processedThread.words.toString(),
@@ -147,10 +115,16 @@ function main() {
       RESP: processedThread.avgResp.toFixed(2)
     }
   });
+
   tmpDir.removeCallback();
   console.log("Finished.");
 }
 
+/**
+ * Extracts the stats from the messages. This function is pretty
+ * big because we want to do all of the checks in a single pass
+ * of the array.
+ */
 function processThread(thread: Thread): ProcessedThread {
   const years: { [key: string]: number[] } = {};
   const times = [...Array(24).keys()].map(e => {
@@ -189,6 +163,7 @@ function processThread(thread: Thread): ProcessedThread {
   const wordMap: { [key: string]: number } = {};
 
   thread.messages.forEach(entry => {
+    // TODO: Take timezone from command line input
     const time = moment(entry.timestamp_ms).tz("America/Vancouver");
     const year = time.year();
     const doy = time.dayOfYear() + 1;
@@ -246,6 +221,8 @@ function processThread(thread: Thread): ProcessedThread {
     });
   });
 
+  // Sort the words by frequency of use. Probably could have used a
+  // sorted map or something instead of doing this but oh well
   const wordsSorted = Object.entries(wordMap).sort(function(a, b) {
     return wordMap[b[0]] - wordMap[a[0]];
   });
@@ -261,7 +238,7 @@ function processThread(thread: Thread): ProcessedThread {
     globalMax,
     longest,
     avgResp,
-    wordMap: wordsSorted.filter(word => word[0].length > 4).slice(0, 10)
+    wordMap: wordsSorted.filter(word => word[0].length >= 5).slice(0, 10)
   };
 }
 

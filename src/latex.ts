@@ -1,4 +1,8 @@
-import { ProcessedThread } from "./index";
+/**
+ * LaTeX templates
+ */
+
+import { ProcessedThread } from "./types";
 
 function getGraphLatex(fileName: string, title?: string): string {
   const latexString = `\\begin{center}

@@ -1,3 +1,7 @@
+/**
+ * Combine the gnuplot graphs and cumulative data to create
+ * the final report
+ */
 import * as child from "child_process";
 import { readFileSync, writeFileSync, copyFileSync } from "fs";
 
